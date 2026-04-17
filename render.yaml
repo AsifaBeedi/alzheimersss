@@ -1,0 +1,35 @@
+services:
+  - name: mitra-backend
+    type: web
+    runtime: python
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////opt/render/project/src/backend/data/mitra_demo.db
+      - key: CORS_ORIGINS
+        value: https://mitra-frontend.onrender.com
+      - key: DATABASE_ECHO
+        value: "false"
+    disk:
+      name: mitra-data
+      mountPath: /opt/render/project/src/backend/data
+      sizeGB: 1
+
+  - name: mitra-frontend
+    type: web
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://mitra-backend.onrender.com/api/v1
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
