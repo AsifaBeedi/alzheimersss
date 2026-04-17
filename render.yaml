@@ -9,14 +9,14 @@ services:
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        value: sqlite:////opt/render/project/src/backend/data/mitra_demo.db
+        value: sqlite:////data/mitra_demo.db
       - key: CORS_ORIGINS
-        value: https://mitra-frontend.onrender.com
+        sync: false
       - key: DATABASE_ECHO
         value: "false"
     disk:
       name: mitra-data
-      mountPath: /opt/render/project/src/backend/data
+      mountPath: /data
       sizeGB: 1
 
   - name: mitra-frontend
@@ -28,7 +28,7 @@ services:
     staticPublishPath: ./frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://mitra-backend.onrender.com/api/v1
+        sync: false
     routes:
       - type: rewrite
         source: /*
