@@ -13,9 +13,14 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "MITRA"
     API_V1_PREFIX: str = "/api/v1"
 
-    # SQLite for local demo. Swap for postgres+psycopg2 URL in production:
+    # SQLite for demo.
+    # - Local:  file is written next to the working directory (fine for dev)
+    # - Render: /tmp is always writable; set DATABASE_URL env var in the
+    #           Render dashboard to override, e.g. sqlite:////tmp/mitra_demo.db
+    #   For a persistent disk mounted at /data use: sqlite:////data/mitra_demo.db
+    #   Swap for postgres+psycopg2 URL when moving off SQLite:
     #   postgresql://user:pass@host:5432/mitra
-    DATABASE_URL: str = "sqlite:///./mitra_demo.db"
+    DATABASE_URL: str = "sqlite:////tmp/mitra_demo.db"
 
     # Echo SQL statements to stdout — set to True when debugging queries
     DATABASE_ECHO: bool = False

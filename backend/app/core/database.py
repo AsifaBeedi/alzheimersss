@@ -1,4 +1,6 @@
 import logging
+import re
+from pathlib import Path
 
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
@@ -6,6 +8,28 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_sqlite_dir(url: str) -> None:
+    """
+    If the DATABASE_URL is a SQLite file URL, create the parent directory
+    so SQLite can write the file.  Needed on Render and any environment
+    where the target directory may not exist yet (e.g. /data from a
+    persistent disk, or a first-run /tmp path on some systems).
+
+    Handles both three-slash (relative) and four-slash (absolute) forms:
+      sqlite:///./mitra_demo.db   → relative path, no mkdir needed
+      sqlite:////tmp/mitra_demo.db → absolute path, mkdir /tmp (usually exists)
+      sqlite:////data/mitra_demo.db → absolute path, mkdir /data
+    """
+    match = re.match(r"sqlite:////(.*)", url)   # absolute path (4 slashes)
+    if match:
+        db_path = Path("/" + match.group(1))
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        logger.info("SQLite directory ensured: %s", db_path.parent)
+
+
+_ensure_sqlite_dir(settings.DATABASE_URL)
 
 # SQLite requires check_same_thread=False when the same connection is shared
 # across the FastAPI request thread pool. Safe here because SQLAlchemy's
@@ -88,11 +112,6 @@ def _normalize_legacy_enum_values() -> None:
                 "WRONG_TURN": "wrong_turn",
                 "FALL": "fall",
                 "AGITATION": "agitation",
-                "SAFETY_EVENT": "safety_event",
-                "EMERGENCY_EVENT": "emergency_event",
-                "SCENE_EVENT": "scene_event",
-                "PEDESTRIAN_EVENT": "pedestrian_event",
-                "PIPELINE_EVENT": "pipeline_event",
             },
             "severity": {
                 "INFO": "info",
