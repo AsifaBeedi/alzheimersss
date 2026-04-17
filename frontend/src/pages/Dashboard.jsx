@@ -345,15 +345,15 @@ export default function Dashboard() {
           )}
 
           {/* Row 2 — Trend charts (left 2/3) + Open alerts (right 1/3) */}
-          <div className="grid grid-cols-3 gap-5 items-stretch">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+            <div className="md:col-span-2">
               <TrendCharts summary={summary} loading={loadingSummary} />
             </div>
             <AlertsPanel alerts={alerts} loading={loadingAlerts} />
           </div>
 
           {/* Row 3 — Clinical summary (left) + Event timeline (right) */}
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <ClinicalSummary summary={summary} loading={loadingSummary} />
             <EventTimeline   events={events}   loading={loadingEvents}  />
           </div>

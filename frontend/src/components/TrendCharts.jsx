@@ -82,7 +82,7 @@ export default function TrendCharts({ summary, loading }) {
   const wrongData    = summary?.trend_wrong_turn_count   ?? [];
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
       {/* ── Independence Score ──────────────────────────────────────── */}
       <ChartCard title="Independence Score — 30 days" loading={loading}>

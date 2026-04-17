@@ -423,7 +423,7 @@ function ClinicalCard({ patient, summary, alerts }) {
 
 function Skeleton() {
   return (
-    <div className="grid grid-cols-2 gap-5">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       {[0, 1].map((i) => (
         <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
           <div className="space-y-2">
@@ -456,7 +456,7 @@ export default function ReportPreview({ patient, summary, alerts, loading }) {
 
   if (!patient && !summary) {
     return (
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {["Family Update", "Clinical Summary"].map((label) => (
           <div
             key={label}
@@ -482,7 +482,7 @@ export default function ReportPreview({ patient, summary, alerts, loading }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <FamilyCard  patient={patient} summary={summary} alerts={alerts} />
         <ClinicalCard patient={patient} summary={summary} alerts={alerts} />
       </div>
