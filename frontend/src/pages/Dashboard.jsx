@@ -29,6 +29,7 @@ import {
   getAlerts,
   getTimeline,
   seedDemoData,
+  importPipelineData,
   computeMetrics,
   generateAlerts,
 } from "../api/client.js";
@@ -87,16 +88,61 @@ const ADMIN_ACTIONS = [
   { key: "alerts",  label: "Generate Alerts", fn: generateAlerts },
 ];
 
+// Ordered steps run by "Initialize Demo"
+const INIT_STEPS = [
+  { label: "Seeding patients…",     fn: seedDemoData                        },
+  { label: "Importing pipeline…",   fn: () => importPipelineData(1)         },
+  { label: "Computing metrics…",    fn: computeMetrics                      },
+  { label: "Generating alerts…",    fn: generateAlerts                      },
+];
+
+// ── Shared status pill ────────────────────────────────────────────────────────
+
+function StatusPill({ status }) {
+  if (!status) return null;
+  return (
+    <span className={`text-xs flex items-center gap-1.5 ml-1 ${status.ok ? "text-green-400" : "text-red-400"}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${status.ok ? "bg-green-400" : "bg-red-400"}`} />
+      {status.text}
+    </span>
+  );
+}
+
 // ── Admin strip ───────────────────────────────────────────────────────────────
 
-function AdminStrip({ running, status, onRun }) {
+function AdminStrip({ running, status, onRun, initRunning, initStep, initStatus, onInitialize }) {
+  const busy = running !== null || initRunning;
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
+
+      {/* ── Initialize Demo — primary CTA ── */}
+      <button
+        onClick={onInitialize}
+        disabled={busy}
+        className="text-xs px-3 py-1.5 rounded border border-teal-800 text-teal-400
+                   hover:border-teal-600 hover:text-teal-300
+                   disabled:opacity-40 disabled:cursor-not-allowed
+                   transition-colors flex items-center gap-1.5"
+      >
+        {initRunning ? (
+          <>
+            <span className="w-2.5 h-2.5 rounded-full border border-teal-400/30
+                             border-t-teal-400 animate-spin flex-shrink-0" />
+            {initStep ?? "Initializing…"}
+          </>
+        ) : "Initialize Demo"}
+      </button>
+
+      {/* Divider */}
+      <span className="text-gray-800 select-none text-sm">|</span>
+
+      {/* ── Individual admin buttons ── */}
       {ADMIN_ACTIONS.map(({ key, label }) => (
         <button
           key={key}
           onClick={() => onRun(key)}
-          disabled={running !== null}
+          disabled={busy}
           className="text-xs px-3 py-1.5 rounded border border-gray-800 text-gray-500
                      hover:border-gray-600 hover:text-gray-300
                      disabled:opacity-40 disabled:cursor-not-allowed
@@ -106,17 +152,8 @@ function AdminStrip({ running, status, onRun }) {
         </button>
       ))}
 
-      {/* Inline status message */}
-      {status && (
-        <span
-          className={`text-xs flex items-center gap-1.5 ml-1 ${
-            status.ok ? "text-green-400" : "text-red-400"
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${status.ok ? "bg-green-400" : "bg-red-400"}`} />
-          {status.text}
-        </span>
-      )}
+      <StatusPill status={initStatus} />
+      <StatusPill status={status} />
     </div>
   );
 }
@@ -146,6 +183,11 @@ export default function Dashboard() {
   // ── Admin action state ────────────────────────────────────────────────────
   const [adminRunning, setAdminRunning] = useState(null);  // key string | null
   const [adminStatus,  setAdminStatus]  = useState(null);  // { ok, text } | null
+
+  // ── Initialize Demo state ─────────────────────────────────────────────────
+  const [initRunning, setInitRunning] = useState(false);
+  const [initStep,    setInitStep]    = useState(null);   // current step label
+  const [initStatus,  setInitStatus]  = useState(null);   // { ok, text } | null
 
   // ── Trigger to re-fetch patient data (incremented after admin actions) ────
   const [refreshTick, setRefreshTick] = useState(0);
@@ -237,6 +279,32 @@ export default function Dashboard() {
     }
   }
 
+  // ── Initialize Demo handler ───────────────────────────────────────────────
+  async function handleInitializeDemo() {
+    if (initRunning || adminRunning) return;
+
+    setInitRunning(true);
+    setInitStatus(null);
+
+    try {
+      for (const step of INIT_STEPS) {
+        setInitStep(step.label);
+        await step.fn();
+      }
+      setInitStatus({ ok: true, text: "Demo initialized." });
+      // Reload patient list (seed may have added patients) and refresh data
+      loadPatients(/* autoSelectFirst = */ !selectedId);
+      setRefreshTick((t) => t + 1);
+    } catch (err) {
+      const detail = err?.response?.data?.detail ?? err?.message ?? "Unknown error";
+      setInitStatus({ ok: false, text: `Initialization failed: ${detail}` });
+    } finally {
+      setInitStep(null);
+      setInitRunning(false);
+      setTimeout(() => setInitStatus(null), 6000);
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Layout
@@ -250,6 +318,10 @@ export default function Dashboard() {
         running={adminRunning}
         status={adminStatus}
         onRun={handleAdminAction}
+        initRunning={initRunning}
+        initStep={initStep}
+        initStatus={initStatus}
+        onInitialize={handleInitializeDemo}
       />
 
       {/* No patients guard */}

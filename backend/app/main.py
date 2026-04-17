@@ -13,6 +13,7 @@ FastAPI application entry point.
 Patient CRUD:       GET/POST/PATCH /api/v1/patients
 Demo seed:          POST /api/v1/seed-demo-data
 Metric compute:     POST /api/v1/compute-metrics
+Pipeline import:    POST /api/v1/import-pipeline-data
 
 Typical startup sequence (fresh database):
   1. POST /api/v1/seed-demo-data     — populate synthetic data
@@ -115,4 +116,11 @@ app.include_router(
     alerts_admin_router,
     prefix=f"{settings.API_V1_PREFIX}/generate-alerts",
     tags=["Alerts Admin"],
+)
+
+from app.api.import_data import router as import_data_router
+app.include_router(
+    import_data_router,
+    prefix=f"{settings.API_V1_PREFIX}/import-pipeline-data",
+    tags=["Pipeline Import"],
 )

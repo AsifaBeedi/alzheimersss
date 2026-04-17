@@ -94,3 +94,10 @@ export const computeMetrics = () =>
 /** POST /generate-alerts/ — evaluate alert rules for all patients */
 export const generateAlerts = () =>
   post("/generate-alerts/");
+
+/**
+ * POST /import-pipeline-data/ — import backend/data/responses_full.jsonl
+ * @param {number} [patientId=1]  patient to attach imported events to
+ */
+export const importPipelineData = (patientId = 1) =>
+  api.post("/import-pipeline-data/", null, { params: { patient_id: patientId } }).then(r => r.data);
