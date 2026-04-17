@@ -158,9 +158,66 @@ function AdminStrip({ running, status, onRun, initRunning, initStep, initStatus,
   );
 }
 
+// ── Tab bar ───────────────────────────────────────────────────────────────────
+
+const TABS = [
+  { key: "dashboard",    label: "Dashboard"     },
+  { key: "source-video", label: "Source Video"  },
+];
+
+function TabBar({ active, onChange }) {
+  return (
+    <div className="flex items-center gap-1 border-b border-gray-800 -mx-4 md:-mx-6 px-4 md:px-6 mb-1">
+      {TABS.map(({ key, label }) => {
+        const isActive = active === key;
+        return (
+          <button
+            key={key}
+            onClick={() => onChange(key)}
+            className={`
+              text-xs font-medium px-3 py-2.5 border-b-2 transition-colors whitespace-nowrap
+              ${isActive
+                ? "border-teal-400 text-teal-400"
+                : "border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-700"}
+            `}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Source video view ─────────────────────────────────────────────────────────
+
+function SourceVideoView() {
+  return (
+    <div className="flex flex-col items-center gap-5 py-4">
+      <div className="w-full max-w-3xl">
+        <video
+          src="/videodemo.mp4"
+          controls
+          className="w-full rounded-xl border border-gray-800 bg-gray-900 shadow-xl"
+          style={{ maxHeight: "70vh" }}
+        >
+          Your browser does not support the video tag.
+        </video>
+        <p className="mt-4 text-xs text-gray-500 leading-relaxed text-center max-w-2xl mx-auto">
+          This sample video is used as the upstream input to the MITRA pipeline.
+          The resulting pipeline outputs are then mapped into the Alzheimer&apos;s monitoring dashboard.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+
+  // ── Active tab ────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   // ── Patient list ─────────────────────────────────────────────────────────
   const [patients,        setPatients]        = useState([]);
@@ -313,58 +370,69 @@ export default function Dashboard() {
       onSelectPatient={setSelectedId}
       loadingPatients={loadingPatients}
     >
-      {/* Row 0 — Admin actions */}
-      <AdminStrip
-        running={adminRunning}
-        status={adminStatus}
-        onRun={handleAdminAction}
-        initRunning={initRunning}
-        initStep={initStep}
-        initStatus={initStatus}
-        onInitialize={handleInitializeDemo}
-      />
+      {/* Tab bar — sits flush against Layout's horizontal padding */}
+      <TabBar active={activeTab} onChange={setActiveTab} />
 
-      {/* No patients guard */}
-      {!loadingPatients && patients.length === 0 ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-1">
-            <p className="text-sm text-gray-500">No patients found.</p>
-            <p className="text-xs text-gray-700">
-              Click <span className="text-gray-500">Seed Demo Data</span> to populate the database.
-            </p>
-          </div>
-        </div>
-      ) : (
+      {/* ── Source Video tab ── */}
+      {activeTab === "source-video" && <SourceVideoView />}
+
+      {/* ── Dashboard tab ── */}
+      {activeTab === "dashboard" && (
         <>
-          {/* Row 1 — Six metric overview tiles */}
-          <OverviewCards summary={summary} loading={loadingSummary} />
-
-          {/* Data source provenance note — only renders when summary is loaded */}
-          {!loadingSummary && (
-            <DataSourceNote sources={summary?.data_sources ?? null} />
-          )}
-
-          {/* Row 2 — Trend charts (left 2/3) + Open alerts (right 1/3) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
-            <div className="md:col-span-2">
-              <TrendCharts summary={summary} loading={loadingSummary} />
-            </div>
-            <AlertsPanel alerts={alerts} loading={loadingAlerts} />
-          </div>
-
-          {/* Row 3 — Clinical summary (left) + Event timeline (right) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <ClinicalSummary summary={summary} loading={loadingSummary} />
-            <EventTimeline   events={events}   loading={loadingEvents}  />
-          </div>
-
-          {/* Row 4 — Report preview */}
-          <ReportPreview
-            patient={patients.find((p) => p.id === selectedId) ?? null}
-            summary={summary}
-            alerts={alerts}
-            loading={loadingSummary}
+          {/* Row 0 — Admin actions */}
+          <AdminStrip
+            running={adminRunning}
+            status={adminStatus}
+            onRun={handleAdminAction}
+            initRunning={initRunning}
+            initStep={initStep}
+            initStatus={initStatus}
+            onInitialize={handleInitializeDemo}
           />
+
+          {/* No patients guard */}
+          {!loadingPatients && patients.length === 0 ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center space-y-1">
+                <p className="text-sm text-gray-500">No patients found.</p>
+                <p className="text-xs text-gray-700">
+                  Click <span className="text-gray-500">Seed Demo Data</span> to populate the database.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Row 1 — Six metric overview tiles */}
+              <OverviewCards summary={summary} loading={loadingSummary} />
+
+              {/* Data source provenance note — only renders when summary is loaded */}
+              {!loadingSummary && (
+                <DataSourceNote sources={summary?.data_sources ?? null} />
+              )}
+
+              {/* Row 2 — Trend charts (left 2/3) + Open alerts (right 1/3) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+                <div className="md:col-span-2">
+                  <TrendCharts summary={summary} loading={loadingSummary} />
+                </div>
+                <AlertsPanel alerts={alerts} loading={loadingAlerts} />
+              </div>
+
+              {/* Row 3 — Clinical summary (left) + Event timeline (right) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <ClinicalSummary summary={summary} loading={loadingSummary} />
+                <EventTimeline   events={events}   loading={loadingEvents}  />
+              </div>
+
+              {/* Row 4 — Report preview */}
+              <ReportPreview
+                patient={patients.find((p) => p.id === selectedId) ?? null}
+                summary={summary}
+                alerts={alerts}
+                loading={loadingSummary}
+              />
+            </>
+          )}
         </>
       )}
     </Layout>
